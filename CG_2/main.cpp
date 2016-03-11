@@ -311,7 +311,7 @@ void InitializeUI(){
 		{
 			TwEnumVal rotEV[3] = { { X, "X-Axis" }, { Y, "Y-Axis" }, { Z, "Z-Axis" } };
 			TwType rotDir = TwDefineEnum("rotDir", rotEV, 3);
-			TwAddVarRW(bar, "Direction", rotDir, &model, " group = Dynamic_Light");
+			TwAddVarRW(bar, "Direction", rotDir, &rotate, " group = Dynamic_Light");
 		}
 		TwAddButton(bar, "Reset", Reset, NULL, " group = Dynamic_Light");
 
@@ -319,10 +319,6 @@ void InitializeUI(){
 		TwDefine("TweakBar/dDiffuse group = Dynamic_Light");
 		TwDefine("TweakBar/dSpecular group = Dynamic_Light");
 	}
-
-
-	
-
 }
 
 void RenderFunction(){
@@ -347,7 +343,7 @@ void RenderFunction(){
 	glViewport(0, 0, (GLsizei)width, (GLsizei)height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0, aspect, 1.0, 3000.0);
+	//gluPerspective(45.0, aspect, 1.0, 3000.0);
 
 	ProjectionMatrix = glm::perspective(45.0f, 4.0f/3.0f , 1.0f, 1000.0f);
 		
@@ -363,21 +359,21 @@ void RenderFunction(){
 	switch (model)
 	{
 	case 0:
-		gluLookAt(0, 0, 1, 0, 0, -2, 0, 1, 0);
+		//gluLookAt(0, 0, 1, 0, 0, -2, 0, 1, 0);
 		ViewMatrix = glm::lookAt(glm::vec3(0.0f, 1.0f, 0.0f),
 			glm::vec3(0.0f, 0.0f, -2.0f),
 			glm::vec3(0.0f, 1.0f, 0.0f));
 		camPos = { 0.0f, 1.0f, 0.0f };
 		break;
 	case 1:
-		gluLookAt((x_min + x_max) / 2, (y_min + y_max) / 2, 800 + (z_min + z_max) / 2, (x_min + x_max) / 2, (y_min + y_max) / 2, (z_min + z_max) / 2, 0, 1, 0);
+		//gluLookAt((x_min + x_max) / 2, (y_min + y_max) / 2, 800 + (z_min + z_max) / 2, (x_min + x_max) / 2, (y_min + y_max) / 2, (z_min + z_max) / 2, 0, 1, 0);
 		ViewMatrix = glm::lookAt(glm::vec3( (x_min + x_max) / 2, (y_min + y_max) / 2, 800 + (z_min + z_max) / 2 ),
 			glm::vec3( (x_min + x_max) / 2, (y_min + y_max) / 2, (z_min + z_max) / 2 ),
 			glm::vec3( 0.0f, 1.0f, 0.0f ));
 		camPos = { (x_min + x_max) / 2, (y_min + y_max) / 2, 800 + (z_min + z_max) / 2 };
 		break;
 	case 2:
-		gluLookAt((x_min + x_max) / 2, (y_min + y_max) / 2 - 30, 400 + (z_min + z_max) / 2, (x_min + x_max) / 2, (y_min + y_max) / 2, (z_min + z_max) / 2, 0, 1, 0);
+		//gluLookAt((x_min + x_max) / 2, (y_min + y_max) / 2 - 30, 400 + (z_min + z_max) / 2, (x_min + x_max) / 2, (y_min + y_max) / 2, (z_min + z_max) / 2, 0, 1, 0);
 		glTranslatef(80, 100, 0);
 		ViewMatrix = glm::lookAt(glm::vec3( (x_min + x_max) / 2 + 80, (y_min + y_max) / 2 + 70, 400 + (z_min + z_max) / 2 ),
 			glm::vec3( (x_min + x_max) / 2 + 80, (y_min + y_max) / 2 + 100, (z_min + z_max) / 2 ),
@@ -385,12 +381,14 @@ void RenderFunction(){
 		camPos = { (x_min + x_max) / 2 + 80, (y_min + y_max) / 2 + 70, 400 + (z_min + z_max) / 2 };
 		break;
 	}
+	glUseProgram(programID);
+	glBindVertexArray(vertexarray);
 	
 	MVPMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
-	//glUseProgram(programID);
+	//
 	SetLights(camPos,objPos);
 	SetUniform(programID, camPos, ModelMatrix, ViewMatrix, MVPMatrix, sLight, dLight);
-	//glDrawArrays(GL_TRIANGLES, 0, NumTris);
+	glDrawArrays(GL_TRIANGLES, 0, NumTris);
 	
 	if (display_type == 0)
 		glBegin(GL_POINTS);
@@ -402,7 +400,6 @@ void RenderFunction(){
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glBegin(GL_TRIANGLES);
 	}
-
 
 	//assign color to each mesh
 	glColor3f(1.0f, 0.0f, 0.0f);
@@ -498,14 +495,36 @@ void CreateGeometry(){
 }
 
 void SetLights(glm::vec3 camPos, glm::vec3 objPos){
+	glm::vec3 dir = objPos - glm::vec3(dLight.position);
 	while (dLightr){
+		// GLUT_ELAPSED_TIME is in milliseconds
+		static int prvMs = glutGet(GLUT_ELAPSED_TIME);
+		const int curMs = glutGet(GLUT_ELAPSED_TIME);
+
+		// dt is in seconds
+		const double dt = (curMs - prvMs) / 1000.0;
+		prvMs = curMs;
+
+		// update world state
+		float speed = 30.0f;
+		float degree = speed * dt;
+		
 		switch (rotate)
 		{
-		case 1:
+		case 0:	//Rotate around X
+			glm::vec3(dLight.position) = glm::mat3(1.0f, 0.0f, 0.0f,
+				0.0f, cos(degree), -sin(degree),
+				0.0f, sin(degree), cos(degree)) * dir + objPos;
 			break;
-		case 2:
+		case 1: //Rotate around Y
+			glm::vec3(dLight.position) = glm::mat3(cos(degree), 0.0f, sin(degree),
+				0.0f, 1.0f, 0.0f,
+				-sin(degree), 0.0f, cos(degree)) * dir + objPos;
 			break;
-		case 3:
+		case 2: //Rotate around Z
+			glm::vec3(dLight.position) = glm::mat3(cos(degree), -sin(degree), 0.0f,
+				sin(degree), cos(degree), 0.0f,
+				0.0f, 0.0f, 1.0f) * dir + objPos;
 			break;
 		default:
 			break;
