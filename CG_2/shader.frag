@@ -18,9 +18,9 @@ int numLight;
 float attenuation;
 Light lights[2];
 //20
-in vec3 vNormal;  //in camera space
+smooth in vec3 vNormal;  //in camera space
 flat in int m;
-in vec3 vPos; // in world space
+smooth in vec3 vPos; // in world space
 in vec4 aColor;
 
 out vec4 color;

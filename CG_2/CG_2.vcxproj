@@ -92,6 +92,8 @@
     <ClInclude Include="Shader.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="fshader.frag" />
+    <None Include="fshader.vert" />
     <None Include="shader.frag" />
     <None Include="shader.vert" />
   </ItemGroup>

@@ -25,7 +25,7 @@ GLint model = 2, ori, sm, rotate, display_type = 2;
 TwBar *bar;
 GLfloat width, height;
 GLboolean dLightr;
-GLuint programID;
+GLuint programID, flatShadingID;
 GLuint vertexarray, vertexbuffer, normalbuffer, mbuffer;
 
 std::vector<glm::vec3> vertices;
@@ -176,7 +176,11 @@ int main(int argc, char **argv)
 
 	glewInit();
 	programID = LoadShaders("shader.vert", "shader.frag");
-		
+	flatShadingID = LoadShaders("fshader.vert", "fshader.frag");
+
+	LoadTriangle();
+	CreateGeometry();
+
 	glutMainLoop();
 	TwTerminate();
 }
@@ -324,9 +328,6 @@ void InitializeUI(){
 void RenderFunction(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	LoadTriangle();
-	CreateGeometry();
-
 	glm::mat4 ProjectionMatrix;
 	glm::mat4 ViewMatrix;
 	glm::mat4 ModelMatrix = glm::mat4(1.0f);
@@ -418,9 +419,16 @@ void RenderFunction(){
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+	glInvalidateBufferData(vertexbuffer);
+	glInvalidateBufferData(normalbuffer);
+	glInvalidateBufferData(mbuffer);
 
 	glPopMatrix();
 	glutSwapBuffers();
+
+	vertices.clear();
+	normals.clear();
+	mindices.clear();
 }
 
 void ResizeFunction(int Width, int Height){

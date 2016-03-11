@@ -4,9 +4,9 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in int mindex;
 
-out vec3 vNormal;  //in camera space
+smooth out vec3 vNormal;  //in camera space
 flat out int m;
-out vec3 vPos; // in world space
+smooth out vec3 vPos; // in world space
 out vec4 aColor;
 
 uniform mat4 MVP;
