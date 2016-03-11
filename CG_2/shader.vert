@@ -12,7 +12,6 @@ out vec4 aColor;
 uniform mat4 MVP;
 uniform mat4 V;
 uniform mat4 M;
-uniform vec4 aLight;
 
 void main()
 {
@@ -26,5 +25,4 @@ void main()
 	vNormal = mat3(transpose(inverse(M))) * normal;
 
 	m = mindex;
-	aColor = aLight;
 }

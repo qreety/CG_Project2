@@ -21,7 +21,7 @@ GLfloat x_min = FLT_MIN, x_max = FLT_MIN,
 		y_min = FLT_MIN, y_max = FLT_MIN, 
 		z_min = FLT_MIN, z_max = FLT_MIN; //To calculate the model position
 GLfloat global_r, global_g, global_b;
-GLint model = 2, ori, sm, rotate;
+GLint model = 2, ori, sm, rotate, display_type = 2;
 TwBar *bar;
 GLfloat width, height;
 GLboolean dLightr;
@@ -55,8 +55,7 @@ typedef struct{
 	glm::vec3 ambient;
 	glm::vec3 diffuse;
 	glm::vec3 specular;
-
-	glm::vec3 position;
+	glm::vec4 position;
 	GLboolean on;
 } light;
 
@@ -72,6 +71,7 @@ void ExitFuntion(int);
 void TW_CALL Reset(void *clientDate);
 void LoadTriangle(void);
 void CreateGeometry(void);
+void SetLights(glm::vec3, glm::vec3);
 void SetUniform(int, glm::vec3, glm::mat4, glm::mat4, glm::mat4, light, light);
 
 //Return the minimum value of three values
@@ -176,9 +176,7 @@ int main(int argc, char **argv)
 
 	glewInit();
 	programID = LoadShaders("shader.vert", "shader.frag");
-	LoadTriangle();
-	CreateGeometry();
-
+		
 	glutMainLoop();
 	TwTerminate();
 }
@@ -244,7 +242,7 @@ void InitializeUI(){
 	{
 		TwEnumVal smEV[2] = { { FLAT, "FLAT" }, { SMOOTH, "SMOOTH" } };
 		TwType smType = TwDefineEnum("smType", smEV, 2);
-		TwAddVarRW(bar, "Shade Mode", smType, &ori, " keyIncr = '<' keyDecr = '>'");
+		TwAddVarRW(bar, "Shade Mode", smType, &sm, " keyIncr = '<' keyDecr = '>'");
 	}
 
 	{
@@ -330,12 +328,16 @@ void InitializeUI(){
 void RenderFunction(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	LoadTriangle();
+	CreateGeometry();
+
 	glm::mat4 ProjectionMatrix;
 	glm::mat4 ViewMatrix;
 	glm::mat4 ModelMatrix = glm::mat4(1.0f);
 	glm::mat4 MVPMatrix;
 	
 	glm::vec3 camPos;
+	glm::vec3 objPos;
 
 	GLfloat global_ambient[] = { global_r, global_g, global_b, 1.0f };
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
@@ -345,7 +347,7 @@ void RenderFunction(){
 	glViewport(0, 0, (GLsizei)width, (GLsizei)height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(100.0, aspect, 1.0, 3000.0);
+	gluPerspective(45.0, aspect, 1.0, 3000.0);
 
 	ProjectionMatrix = glm::perspective(45.0f, 4.0f/3.0f , 1.0f, 1000.0f);
 		
@@ -385,8 +387,34 @@ void RenderFunction(){
 	}
 	
 	MVPMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
+	//glUseProgram(programID);
+	SetLights(camPos,objPos);
 	SetUniform(programID, camPos, ModelMatrix, ViewMatrix, MVPMatrix, sLight, dLight);
-	glDrawArrays(GL_TRIANGLES, 0, NumTris);
+	//glDrawArrays(GL_TRIANGLES, 0, NumTris);
+	
+	if (display_type == 0)
+		glBegin(GL_POINTS);
+	else if (display_type == 1){
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glBegin(GL_TRIANGLES);
+	}
+	else{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glBegin(GL_TRIANGLES);
+	}
+
+
+	//assign color to each mesh
+	glColor3f(1.0f, 0.0f, 0.0f);
+	for (int i = 0; i < NumTris; i++)
+	{
+		glVertex3f(Tris[i].v0.x, Tris[i].v0.y, Tris[i].v0.z);
+		glVertex3f(Tris[i].v1.x, Tris[i].v1.y, Tris[i].v1.z);
+		glVertex3f(Tris[i].v2.x, Tris[i].v2.y, Tris[i].v2.z);
+	}
+
+	glEnd();
+	glFlush();
 
 	TwDraw();
 
@@ -399,6 +427,14 @@ void RenderFunction(){
 }
 
 void ResizeFunction(int Width, int Height){
+	glViewport(0, 0, (GLsizei)Width, (GLsizei)Height);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(45.0, 4.0f/3.0f, 1.0f, 3000.0f);
+
+	glMatrixMode(GL_MODELVIEW);
+	glutSwapBuffers();
+
 	TwWindowSize(Width, Height);
 }
 
@@ -457,22 +493,58 @@ void CreateGeometry(){
 		0,
 		(void*)0
 		);
+	glBindVertexArray(0);
+
 }
 
-void SetUniform(int programID, glm::vec3 camPos, glm::mat4 ModelMatrix, glm::mat4 ViewMatrix, glm::mat4	MVPMatrix,light sLight, light dLight ){
+void SetLights(glm::vec3 camPos, glm::vec3 objPos){
+	while (dLightr){
+		switch (rotate)
+		{
+		case 1:
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+void SetUniform(int programID, glm::vec3 camPos, glm::mat4 ModelMatrix, glm::mat4 ViewMatrix, glm::mat4	MVPMatrix, light sLight, light dLight ){
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 	GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
 	GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
 	GLuint aLightID = glGetUniformLocation(programID, "aLight");
-	GLuint sLightID = glGetUniformLocation(programID, "sLightPosition");
-	GLuint dLightID = glGetUniformLocation(programID, "dLightPosition");
 
 	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVPMatrix[0][0]);
 	glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
 	glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
-
-	glUniform3f(sLightID, sLight.position.x, sLight.position.y, sLight.position.z);
-	glUniform3f(dLightID, dLight.position.x, dLight.position.y, dLight.position.z);
+	//Global ambient light
+	glUniform3f(aLightID, global_r, global_g, global_b);
+	//Directional light
+	glUniform4f(glGetUniformLocation(programID, "sLight.position"), 0.0f, -1.f, -1.0f, 0.0f);
+	glUniform3f(glGetUniformLocation(programID, "sLight.ambient"), sLight.ambient.r, sLight.ambient.g, sLight.ambient.b);
+	glUniform3f(glGetUniformLocation(programID, "sLight.diffuse"), sLight.diffuse.r, sLight.diffuse.g, sLight.diffuse.b);
+	glUniform3f(glGetUniformLocation(programID, "sLight.specular"), sLight.specular.r, sLight.specular.g, sLight.specular.b);
+	glUniform1i(glGetUniformLocation(programID, "sLight.on"), sLight.on);
+	//Ponit light
+	glUniform4f(glGetUniformLocation(programID, "dLight.position"), dLight.position.x, dLight.position.y, dLight.position.z, dLight.position.w);
+	glUniform3f(glGetUniformLocation(programID, "dLight.ambient"), dLight.ambient.r, dLight.ambient.g, dLight.ambient.b);
+	glUniform3f(glGetUniformLocation(programID, "dLight.diffuse"), dLight.diffuse.r, dLight.diffuse.g, dLight.diffuse.b);
+	glUniform3f(glGetUniformLocation(programID, "dLight.specular"), dLight.specular.r, dLight.specular.g, dLight.specular.b);
+	glUniform1i(glGetUniformLocation(programID, "dLight.on"), dLight.on);
+	//Materials
+	for (int i = 0; i < material_count; i++){
+		glUniform3f(glGetUniformLocation(programID, "mat[i].ambient"), Mate[i].ambient.r, Mate[i].ambient.g, Mate[i].ambient.b);
+		glUniform3f(glGetUniformLocation(programID, "mat[i].diffuse"), Mate[i].diffuse.r, Mate[i].diffuse.g, Mate[i].diffuse.b);
+		glUniform3f(glGetUniformLocation(programID, "mat[i].specular"), Mate[i].specular.r, Mate[i].specular.g, Mate[i].specular.b);
+		glUniform1f(glGetUniformLocation(programID, "mat[i].shine"), Mate[i].shine);
+	}
+	//Camera position
+	glUniform3f(glGetUniformLocation(programID, "camPos"), camPos.x, camPos.y, camPos.z);
 
 }
 
@@ -480,13 +552,13 @@ void TW_CALL Reset(void *clientDate){
 	switch (model)
 	{
 	case 0:
-		dLight.position = { 0.0f, 1.0f, 0.0f };
+		dLight.position = { 0.0f, 1.0f, 0.0f, 1.0f };
 		break;
 	case 1:
-		dLight.position = { (x_min + x_max) / 2, (y_min + y_max) / 2, 800 + (z_min + z_max) / 2 };
+		dLight.position = { (x_min + x_max) / 2, (y_min + y_max) / 2, 800 + (z_min + z_max) / 2, 1.0f };
 		break;
 	case 2:
-		dLight.position = { (x_min + x_max) / 2 + 80, (y_min + y_max) / 2 + 70, 400 + (z_min + z_max) / 2 };
+		dLight.position = { (x_min + x_max) / 2 + 80, (y_min + y_max) / 2 + 70, 400 + (z_min + z_max) / 2, 1.0f };
 		break;
 	}
 }
