@@ -34,6 +34,7 @@
     <None Include="shader.frag">
       <Filter>Source Files</Filter>
     </None>
+<<<<<<< HEAD
     <None Include="fshader.vert">
       <Filter>Source Files</Filter>
     </None>
@@ -43,5 +44,7 @@
     <None Include="textShader.frag">
       <Filter>Source Files</Filter>
     </None>
+=======
+>>>>>>> parent of f5f9fa1... Ver 1.3
   </ItemGroup>
 </Project>
