@@ -40,5 +40,8 @@
     <None Include="fshader.frag">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="textShader.frag">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
